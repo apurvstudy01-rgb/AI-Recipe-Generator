@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Recipe Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">🍛 AI Recipe Generator</div>
+        <p class="tagline">Type your ingredients — AI will find and generate a matching recipe</p>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- Input Card -->
+    <section class="card input-card">
+        <h2>What ingredients do you have?</h2>
+        <p class="subtitle">Enter ingredients separated by commas — e.g. <em>tomato, garlic, onion</em></p>
+
+        <form action="/generate_recipe" method="POST" class="form" id="recipeForm">
+            <div class="input-group">
+                <input
+                    type="text"
+                    name="user_input"
+                    id="userInput"
+                    class="text-input"
+                    placeholder="e.g. tomato, garlic, onion"
+                    value="{{ user_input if user_input else '' }}"
+                    required
+                    autocomplete="off"
+                />
+                <button type="submit" class="btn-generate" id="submitBtn">
+                    <span class="btn-text">✨ Generate Recipe</span>
+                    <span class="btn-loading" style="display:none;">⏳ Generating...</span>
+                </button>
+            </div>
+
+            <!-- Example chips -->
+            <div class="chips">
+                <span class="chip-label">Try:</span>
+                <button type="button" class="chip" onclick="setInput('tomato, garlic, onion')">tomato, garlic, onion</button>
+                <button type="button" class="chip" onclick="setInput('chicken, ginger, cumin')">chicken, ginger, cumin</button>
+                <button type="button" class="chip" onclick="setInput('paneer, spinach')">paneer, spinach</button>
+                <button type="button" class="chip" onclick="setInput('rice, coconut, mustard')">rice, coconut, mustard</button>
+                <button type="button" class="chip" onclick="setInput('dal, turmeric, coriander')">dal, turmeric, coriander</button>
+            </div>
+        </form>
+
+        {% if error %}
+        <div class="alert alert-error">⚠️ {{ error }}</div>
+        {% endif %}
+    </section>
+
+    <!-- Result Card -->
+    {% if generated_recipe %}
+    <section class="card result-card">
+
+        <!-- Matched recipe badge -->
+        {% if matched_name %}
+        <div class="match-banner">
+            <span class="match-icon">🎯</span>
+            <div>
+                <div class="match-label">Best matching recipe found</div>
+                <div class="match-name">{{ matched_name }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="match-banner no-match">
+            <span class="match-icon">🤖</span>
+            <div>
+                <div class="match-label">No exact match — generating from scratch</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Detected ingredients -->
+        {% if ingredients %}
+        <div class="ingredients-row">
+            <span class="ing-label">Ingredients detected:</span>
+            {% for ing in ingredients %}
+            <span class="ing-tag">{{ ing }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Generated recipe -->
+        <div class="result-header">
+            <h2>🍽️ Generated Recipe Instructions</h2>
+            <button class="btn-copy" onclick="copyRecipe()">📋 Copy</button>
+        </div>
+
+        <div class="recipe-text" id="recipeText">{{ generated_recipe }}</div>
+
+        <div class="result-footer">
+            🤖 AI-generated based on 6,000+ Indian recipes
+        </div>
+    </section>
+    {% endif %}
+
+</main>
+
+<footer class="footer">
+    <p>Built with Flask + TensorFlow · Indian Food Dataset</p>
+</footer>
+
+<script>
+    function setInput(text) {
+        document.getElementById('userInput').value = text;
+        document.getElementById('userInput').focus();
+    }
+
+    function copyRecipe() {
+        const text = document.getElementById('recipeText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.btn-copy');
+            btn.textContent = '✅ Copied!';
+            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+        });
+    }
+
+    document.getElementById('recipeForm').addEventListener('submit', function () {
+        const btn = document.getElementById('submitBtn');
+        btn.querySelector('.btn-text').style.display = 'none';
+        btn.querySelector('.btn-loading').style.display = 'inline';
+        btn.disabled = true;
+    });
+
+    const result = document.querySelector('.result-card');
+    if (result) result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+</script>
+
+</body>
+</html>

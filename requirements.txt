@@ -1,0 +1,20 @@
+# AI Recipe Generator - Requirements
+# Compatible with Python 3.9, 3.10, 3.11, 3.12
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+Flask==3.0.3
+flask-cors==4.0.0
+
+# Machine Learning
+tensorflow==2.16.2
+numpy==1.26.4
+
+# Data Handling
+pandas==2.2.2
+
+# Utilities
+scikit-learn==1.5.0
+
+# For saving tokenizer
+# (pickle is built-in, no install needed)
