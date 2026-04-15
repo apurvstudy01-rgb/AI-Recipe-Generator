@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ai-recipe-generator
+    env: python
+    buildCommand: pip install -r requirements.txt && python train_model.py
+    startCommand: python app.py
