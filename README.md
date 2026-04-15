@@ -1,6 +1,7 @@
 # 🍛 AI Recipe Generator
 
 An AI-powered web app that generates Indian recipes from just 2–3 starting words, built with Flask + TensorFlow (LSTM model).
+developed by Apurv Pawar and Omkar Patil for college students' final year project
 
 ---
 
