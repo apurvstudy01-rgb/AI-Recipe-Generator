@@ -18,3 +18,4 @@ scikit-learn==1.5.0
 
 # For saving tokenizer
 # (pickle is built-in, no install needed)
+gdown==5.2.0
