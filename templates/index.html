@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>AI Recipe Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -12,7 +12,7 @@
 <header class="header">
     <div class="header-inner">
         <div class="logo">🍛 AI Recipe Generator</div>
-        <p class="tagline">Type your ingredients — AI will find and generate a matching recipe</p>
+        <p class="tagline">Enter your ingredients — get a real matching Indian recipe instantly</p>
     </div>
 </header>
 
@@ -21,34 +21,33 @@
     <!-- Input Card -->
     <section class="card input-card">
         <h2>What ingredients do you have?</h2>
-        <p class="subtitle">Enter ingredients separated by commas — e.g. <em>tomato, garlic, onion</em></p>
+        <p class="subtitle">Enter ingredients separated by commas — e.g. <em>paneer, spinach</em> or <em>chicken, ginger, cumin</em></p>
 
-        <form action="/generate_recipe" method="POST" class="form" id="recipeForm">
+        <form action="/generate_recipe" method="POST" id="recipeForm">
             <div class="input-group">
                 <input
                     type="text"
                     name="user_input"
                     id="userInput"
                     class="text-input"
-                    placeholder="e.g. tomato, garlic, onion"
+                    placeholder="e.g. paneer, spinach"
                     value="{{ user_input if user_input else '' }}"
-                    required
-                    autocomplete="off"
+                    required autocomplete="off"
                 />
                 <button type="submit" class="btn-generate" id="submitBtn">
                     <span class="btn-text">✨ Generate Recipe</span>
-                    <span class="btn-loading" style="display:none;">⏳ Generating...</span>
+                    <span class="btn-loading" style="display:none;">⏳ Finding...</span>
                 </button>
             </div>
 
-            <!-- Example chips -->
             <div class="chips">
                 <span class="chip-label">Try:</span>
-                <button type="button" class="chip" onclick="setInput('tomato, garlic, onion')">tomato, garlic, onion</button>
-                <button type="button" class="chip" onclick="setInput('chicken, ginger, cumin')">chicken, ginger, cumin</button>
                 <button type="button" class="chip" onclick="setInput('paneer, spinach')">paneer, spinach</button>
-                <button type="button" class="chip" onclick="setInput('rice, coconut, mustard')">rice, coconut, mustard</button>
+                <button type="button" class="chip" onclick="setInput('chicken, ginger, cumin')">chicken, ginger, cumin</button>
+                <button type="button" class="chip" onclick="setInput('tomato, garlic, onion')">tomato, garlic, onion</button>
                 <button type="button" class="chip" onclick="setInput('dal, turmeric, coriander')">dal, turmeric, coriander</button>
+                <button type="button" class="chip" onclick="setInput('rice, coconut, mustard')">rice, coconut, mustard</button>
+                <button type="button" class="chip" onclick="setInput('potato, cumin, coriander')">potato, cumin, coriander</button>
             </div>
         </form>
 
@@ -58,55 +57,75 @@
     </section>
 
     <!-- Result Card -->
-    {% if generated_recipe %}
+    {% if recipe %}
     <section class="card result-card">
 
-        <!-- Matched recipe badge -->
-        {% if matched_name %}
+        <!-- Recipe Name Banner -->
         <div class="match-banner">
             <span class="match-icon">🎯</span>
             <div>
                 <div class="match-label">Best matching recipe found</div>
-                <div class="match-name">{{ matched_name }}</div>
+                <div class="match-name">{{ recipe.name }}</div>
             </div>
         </div>
-        {% else %}
-        <div class="match-banner no-match">
-            <span class="match-icon">🤖</span>
-            <div>
-                <div class="match-label">No exact match — generating from scratch</div>
-            </div>
-        </div>
-        {% endif %}
 
-        <!-- Detected ingredients -->
+        <!-- Meta Info Row -->
+        <div class="meta-row">
+            {% if recipe.cuisine %}<span class="meta-tag">🍽️ {{ recipe.cuisine }}</span>{% endif %}
+            {% if recipe.course %}<span class="meta-tag">📋 {{ recipe.course }}</span>{% endif %}
+            {% if recipe.diet %}<span class="meta-tag">🌿 {{ recipe.diet }}</span>{% endif %}
+            {% if recipe.prep_time %}<span class="meta-tag">⏱️ Prep: {{ recipe.prep_time }} min</span>{% endif %}
+            {% if recipe.cook_time %}<span class="meta-tag">🔥 Cook: {{ recipe.cook_time }} min</span>{% endif %}
+            {% if recipe.servings %}<span class="meta-tag">👥 Serves: {{ recipe.servings }}</span>{% endif %}
+        </div>
+
+        <!-- Detected Ingredients -->
         {% if ingredients %}
         <div class="ingredients-row">
-            <span class="ing-label">Ingredients detected:</span>
+            <span class="ing-label">Your ingredients:</span>
             {% for ing in ingredients %}
             <span class="ing-tag">{{ ing }}</span>
             {% endfor %}
         </div>
         {% endif %}
 
-        <!-- Generated recipe -->
-        <div class="result-header">
-            <h2>🍽️ Generated Recipe Instructions</h2>
-            <button class="btn-copy" onclick="copyRecipe()">📋 Copy</button>
+        <!-- Full Ingredients List -->
+        <div class="section-block">
+            <div class="section-heading">📝 Ingredients Needed</div>
+            <div class="ingredients-grid">
+                {% for ing in recipe.ingredients %}
+                <div class="ing-item">
+                    <span class="ing-dot">•</span>
+                    <span>{{ ing }}</span>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="recipe-text" id="recipeText">{{ generated_recipe }}</div>
-
-        <div class="result-footer">
-            🤖 AI-generated based on 6,000+ Indian recipes
+        <!-- Instructions -->
+        <div class="section-block">
+            <div class="result-header">
+                <div class="section-heading">👨‍🍳 Cooking Instructions</div>
+                <button class="btn-copy" onclick="copyRecipe()">📋 Copy All</button>
+            </div>
+            <div class="recipe-text" id="recipeText">{{ recipe.instructions }}</div>
         </div>
+
+        <!-- AI Tip -->
+        {% if tip %}
+        <div class="tip-block">
+            <div class="tip-label">🤖 AI Chef's Tip</div>
+            <div class="tip-text">{{ tip }}</div>
+        </div>
+        {% endif %}
+
     </section>
     {% endif %}
 
 </main>
 
 <footer class="footer">
-    <p>Built with Flask + TensorFlow · Indian Food Dataset</p>
+    <p>Built with Flask + TensorFlow · 6,000+ Indian Recipes Dataset</p>
 </footer>
 
 <script>
@@ -116,11 +135,13 @@
     }
 
     function copyRecipe() {
-        const text = document.getElementById('recipeText').innerText;
+        const name = document.querySelector('.match-name')?.innerText || '';
+        const instructions = document.getElementById('recipeText')?.innerText || '';
+        const text = `${name}\n\n${instructions}`;
         navigator.clipboard.writeText(text).then(() => {
             const btn = document.querySelector('.btn-copy');
             btn.textContent = '✅ Copied!';
-            setTimeout(() => btn.textContent = '📋 Copy', 2000);
+            setTimeout(() => btn.textContent = '📋 Copy All', 2000);
         });
     }
 
@@ -134,6 +155,5 @@
     const result = document.querySelector('.result-card');
     if (result) result.scrollIntoView({ behavior: 'smooth', block: 'start' });
 </script>
-
 </body>
 </html>
