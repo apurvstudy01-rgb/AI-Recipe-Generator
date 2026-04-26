@@ -4,7 +4,7 @@ An AI-powered web application that generates complete Indian recipes from just a
 
 > **Live Demo:** [Click here to try it](https://huggingface.co/spaces/Apurv07/AI-Recipe-Generator)
 > 
-> **GitHub Repo:** [github.com/YOUR_USERNAME/AI-Recipe-Generator](https://github.com/apurvstudy01-rgb/AI-Recipe-Generator?tab=readme-ov-file#-license)
+> **GitHub Repo:** (github.com/YOUR_USERNAME/AI-Recipe-Generator)
 
 ---
 
