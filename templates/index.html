@@ -1,159 +1,721 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>AI Recipe Generator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Recipe Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+/* ── VARIABLES ── */
+:root{
+  --bg:       #090e1a;
+  --panel:    #0e1628;
+  --panel2:   #111d35;
+  --border:   #1e3058;
+  --border2:  #243d6e;
+  --neon:     #00d4ff;
+  --neon2:    #0099cc;
+  --orange:   #ff6b1a;
+  --orange2:  #cc4f00;
+  --green:    #00ff9d;
+  --green2:   #00c47a;
+  --text:     #c8d8f0;
+  --text-dim: #6080a0;
+  --white:    #e8f0ff;
+  --gold:     #ffc857;
+}
+
+/* ── BASE ── */
+body{
+  font-family:'Exo 2',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── BACKGROUND GRID ── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,153,204,0.12) 0%, transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 20px 60px;}
+
+/* ── HEADER ── */
+.header{
+  text-align:center;
+  padding:48px 20px 40px;
+  position:relative;
+}
+
+/* Robot SVG mascot */
+.robot{
+  width:110px;height:110px;
+  margin:0 auto 20px;
+  position:relative;
+  animation:float 3.5s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-10px);}
+}
+
+/* Glow ring behind robot */
+.robot::before{
+  content:'';
+  position:absolute;
+  width:120px;height:120px;
+  top:-5px;left:-5px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%);
+  animation:pulse-ring 2.5s ease-in-out infinite;
+}
+@keyframes pulse-ring{
+  0%,100%{transform:scale(1);opacity:0.6;}
+  50%{transform:scale(1.15);opacity:1;}
+}
+
+.h-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.6rem,4vw,2.5rem);
+  font-weight:900;
+  letter-spacing:0.06em;
+  background:linear-gradient(135deg, var(--neon) 0%, var(--white) 50%, var(--orange) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:10px;
+  line-height:1.2;
+}
+.h-sub{
+  font-size:0.95rem;
+  color:var(--text-dim);
+  font-weight:300;
+  letter-spacing:0.04em;
+}
+
+/* Status bar */
+.status-bar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  margin-top:18px;
+  flex-wrap:wrap;
+}
+.status-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,212,255,0.06);
+  border:1px solid rgba(0,212,255,0.2);
+  border-radius:20px;
+  padding:4px 14px;
+  font-size:0.72rem;
+  font-family:'Orbitron',monospace;
+  letter-spacing:0.06em;
+  color:var(--neon);
+}
+.dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 6px var(--green);
+  animation:blink 1.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ── CARD ── */
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+  margin-bottom:24px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color 0.3s;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--neon), transparent);
+  opacity:0.5;
+}
+.card:hover{border-color:var(--border2);}
+
+.card-title{
+  font-family:'Orbitron',monospace;
+  font-size:0.85rem;
+  letter-spacing:0.1em;
+  color:var(--neon);
+  margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::before{
+  content:'';
+  width:3px;height:14px;
+  background:var(--neon);
+  box-shadow:0 0 8px var(--neon);
+  border-radius:2px;
+}
+.card-heading{
+  font-size:1.25rem;
+  font-weight:600;
+  color:var(--white);
+  margin-bottom:6px;
+}
+.card-sub{
+  font-size:0.88rem;
+  color:var(--text-dim);
+  margin-bottom:26px;
+}
+.card-sub em{color:var(--neon);font-style:normal;}
+
+/* ── INPUT GROUP ── */
+.input-group{
+  display:flex;gap:10px;
+  margin-bottom:16px;
+}
+.text-input{
+  flex:1;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 18px;
+  font-size:0.95rem;
+  font-family:'Exo 2',sans-serif;
+  color:var(--white);
+  outline:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.text-input::placeholder{color:var(--text-dim);}
+.text-input:focus{
+  border-color:var(--neon);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.1), inset 0 0 20px rgba(0,212,255,0.03);
+}
+
+.btn-generate{
+  padding:14px 24px;
+  background:linear-gradient(135deg, var(--orange), var(--orange2));
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-family:'Orbitron',monospace;
+  font-size:0.78rem;
+  font-weight:700;
+  letter-spacing:0.06em;
+  cursor:pointer;
+  white-space:nowrap;
+  position:relative;
+  overflow:hidden;
+  transition:transform 0.15s, box-shadow 0.2s;
+  box-shadow:0 0 20px rgba(255,107,26,0.3);
+}
+.btn-generate::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+}
+.btn-generate:hover{
+  transform:translateY(-1px);
+  box-shadow:0 0 30px rgba(255,107,26,0.5);
+}
+.btn-generate:active{transform:translateY(0);}
+.btn-generate:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.chip-label{font-size:0.78rem;color:var(--text-dim);font-family:'Orbitron',monospace;letter-spacing:0.05em;}
+.chip{
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:5px 14px;
+  font-size:0.78rem;
+  font-family:'Exo 2',sans-serif;
+  color:var(--text-dim);
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.chip:hover{
+  border-color:var(--neon);
+  color:var(--neon);
+  box-shadow:0 0 10px rgba(0,212,255,0.15);
+}
+
+/* ── ALERT ── */
+.alert{
+  margin-top:16px;
+  padding:12px 16px;
+  border-radius:8px;
+  font-size:0.88rem;
+  background:rgba(255,50,50,0.08);
+  border:1px solid rgba(255,50,50,0.25);
+  color:#ff8080;
+}
+
+/* ── RESULT CARD ── */
+.result-card{border-color:rgba(0,255,157,0.2);}
+.result-card::before{
+  background:linear-gradient(90deg, transparent, var(--green), transparent);
+}
+
+/* Match banner */
+.match-banner{
+  display:flex;align-items:center;gap:16px;
+  background:rgba(0,255,157,0.05);
+  border:1px solid rgba(0,255,157,0.2);
+  border-radius:12px;
+  padding:16px 20px;
+  margin-bottom:20px;
+  position:relative;
+  overflow:hidden;
+}
+.match-banner::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:var(--green);
+  box-shadow:0 0 12px var(--green);
+}
+.match-icon-wrap{
+  width:46px;height:46px;
+  background:rgba(0,255,157,0.08);
+  border:1px solid rgba(0,255,157,0.25);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;
+  flex-shrink:0;
+}
+.match-label{
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.1em;
+  color:var(--green2);
+  margin-bottom:4px;
+}
+.match-name{
+  font-size:1.1rem;
+  font-weight:600;
+  color:var(--green);
+  text-shadow:0 0 20px rgba(0,255,157,0.3);
+}
+
+/* Meta row */
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+.meta-tag{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(0,212,255,0.05);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:5px 12px;
+  font-size:0.78rem;
+  color:var(--text-dim);
+}
+.meta-tag span{font-size:0.85rem;}
+
+/* Ingredient detected tags */
+.ing-detected{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:22px;}
+.ing-label-small{
+  font-family:'Orbitron',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.08em;
+  color:var(--text-dim);
+}
+.ing-tag{
+  background:rgba(255,107,26,0.1);
+  border:1px solid rgba(255,107,26,0.3);
+  border-radius:6px;
+  padding:3px 12px;
+  font-size:0.8rem;
+  color:var(--orange);
+  font-weight:500;
+}
+
+/* Section blocks */
+.sec-block{margin-bottom:24px;}
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.sec-title{
+  font-family:'Orbitron',monospace;
+  font-size:0.72rem;
+  letter-spacing:0.1em;
+  color:var(--neon);
+  display:flex;align-items:center;gap:8px;
+}
+.sec-title::before{
+  content:'';width:3px;height:12px;
+  background:var(--neon);box-shadow:0 0 6px var(--neon);border-radius:2px;
+}
+
+/* Ingredients grid */
+.ing-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:8px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px;
+}
+.ing-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:0.85rem;
+  color:var(--text);
+  line-height:1.4;
+  padding:4px 0;
+}
+.ing-bullet{
+  width:6px;height:6px;
+  background:var(--neon);
+  border-radius:50%;
+  box-shadow:0 0 6px var(--neon);
+  flex-shrink:0;
+  margin-top:5px;
+}
+
+/* Instructions box */
+.instr-box{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+  font-size:0.92rem;
+  line-height:1.9;
+  color:var(--text);
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* Copy button */
+.btn-copy{
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:6px 14px;
+  font-size:0.75rem;
+  font-family:'Orbitron',monospace;
+  letter-spacing:0.06em;
+  cursor:pointer;
+  color:var(--text-dim);
+  transition:all 0.2s;
+}
+.btn-copy:hover{border-color:var(--neon);color:var(--neon);box-shadow:0 0 10px rgba(0,212,255,0.2);}
+
+/* AI Tip block */
+.tip-block{
+  background:linear-gradient(135deg, rgba(0,212,255,0.05), rgba(255,107,26,0.05));
+  border:1px solid rgba(0,212,255,0.15);
+  border-radius:12px;
+  padding:18px 20px;
+  position:relative;
+  overflow:hidden;
+}
+.tip-block::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--neon), var(--orange), transparent);
+}
+.tip-head{
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.12em;
+  color:var(--neon);
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.tip-text{
+  font-size:0.9rem;
+  line-height:1.7;
+  color:var(--text);
+  font-style:italic;
+}
+
+/* ── FOOTER ── */
+.footer{
+  text-align:center;
+  padding:24px;
+  font-family:'Orbitron',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.1em;
+  color:var(--text-dim);
+  border-top:1px solid var(--border);
+}
+
+/* ── LOADING OVERLAY ── */
+.loading-bar{
+  display:none;
+  height:2px;
+  background:linear-gradient(90deg, var(--neon), var(--orange), var(--green), var(--neon));
+  background-size:200% 100%;
+  animation:slide 1.5s linear infinite;
+  border-radius:2px;
+  margin-bottom:12px;
+}
+@keyframes slide{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.loading-bar.active{display:block;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .card{padding:20px 16px;}
+  .input-group{flex-direction:column;}
+  .btn-generate{width:100%;}
+  .h-title{font-size:1.5rem;}
+  .ing-grid{grid-template-columns:1fr 1fr;}
+  .sec-head{flex-direction:column;align-items:flex-start;gap:8px;}
+}
+
+/* Scan line animation on result card */
+@keyframes scan{
+  0%{top:-100%;}
+  100%{top:200%;}
+}
+.result-card .scan-line{
+  position:absolute;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(0,255,157,0.3), transparent);
+  animation:scan 4s linear infinite;
+  pointer-events:none;
+}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<header class="header">
-    <div class="header-inner">
-        <div class="logo">🍛 AI Recipe Generator</div>
-        <p class="tagline">Enter your ingredients — get a real matching Indian recipe instantly</p>
+  <!-- ── HEADER ── -->
+  <div class="header">
+
+    <!-- Robot SVG -->
+    <div class="robot">
+      <svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+        <!-- Glow -->
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow2">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1a3060"/>
+            <stop offset="100%" stop-color="#0e1628"/>
+          </linearGradient>
+          <linearGradient id="headGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1e3a70"/>
+            <stop offset="100%" stop-color="#0e1628"/>
+          </linearGradient>
+        </defs>
+        <!-- Antenna -->
+        <line x1="55" y1="8" x2="55" y2="20" stroke="#00d4ff" stroke-width="2" filter="url(#glow2)"/>
+        <circle cx="55" cy="6" r="4" fill="#00d4ff" filter="url(#glow)"/>
+        <!-- Head -->
+        <rect x="25" y="20" width="60" height="40" rx="8" fill="url(#headGrad)" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow2)"/>
+        <!-- Eyes -->
+        <rect x="33" y="30" width="16" height="12" rx="3" fill="#00d4ff" opacity="0.9" filter="url(#glow)">
+          <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="61" y="30" width="16" height="12" rx="3" fill="#00d4ff" opacity="0.9" filter="url(#glow)">
+          <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <!-- Mouth -->
+        <rect x="36" y="48" width="38" height="6" rx="3" fill="#ff6b1a" opacity="0.8" filter="url(#glow2)"/>
+        <!-- Neck -->
+        <rect x="47" y="60" width="16" height="8" rx="3" fill="#1a3060" stroke="#1e3058" stroke-width="1"/>
+        <!-- Body -->
+        <rect x="20" y="68" width="70" height="38" rx="10" fill="url(#bodyGrad)" stroke="#1e3058" stroke-width="1.5"/>
+        <!-- Chest panel -->
+        <rect x="33" y="76" width="44" height="22" rx="5" fill="#0a0f1e" stroke="#00d4ff" stroke-width="1" opacity="0.8"/>
+        <!-- Chef hat icon on chest -->
+        <text x="55" y="91" text-anchor="middle" font-size="14" fill="#ff6b1a" filter="url(#glow2)">🍛</text>
+        <!-- Arm left -->
+        <rect x="6" y="70" width="12" height="28" rx="6" fill="#1a3060" stroke="#1e3058" stroke-width="1"/>
+        <!-- Arm right -->
+        <rect x="92" y="70" width="12" height="28" rx="6" fill="#1a3060" stroke="#1e3058" stroke-width="1"/>
+        <!-- Legs -->
+        <rect x="30" y="106" width="18" height="4" rx="2" fill="#00d4ff" opacity="0.6"/>
+        <rect x="62" y="106" width="18" height="4" rx="2" fill="#00d4ff" opacity="0.6"/>
+      </svg>
     </div>
-</header>
 
-<main class="container">
+    <h1 class="h-title">AI RECIPE GENERATOR</h1>
+    <p class="h-sub">Powered by Bidirectional LSTM Neural Network · 6,870 Indian Recipes</p>
 
-    <!-- Input Card -->
-    <section class="card input-card">
-        <h2>What ingredients do you have?</h2>
-        <p class="subtitle">Enter ingredients separated by commas — e.g. <em>paneer, spinach</em> or <em>chicken, ginger, cumin</em></p>
+    <div class="status-bar">
+      <div class="status-pill"><div class="dot"></div>SYSTEM ONLINE</div>
+      <div class="status-pill"><div class="dot" style="background:var(--orange);box-shadow:0 0 6px var(--orange);animation-delay:0.5s"></div>MODEL LOADED</div>
+      <div class="status-pill"><div class="dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold);animation-delay:1s"></div>6,870 RECIPES</div>
+    </div>
+  </div>
 
-        <form action="/generate_recipe" method="POST" id="recipeForm">
-            <div class="input-group">
-                <input
-                    type="text"
-                    name="user_input"
-                    id="userInput"
-                    class="text-input"
-                    placeholder="e.g. paneer, spinach"
-                    value="{{ user_input if user_input else '' }}"
-                    required autocomplete="off"
-                />
-                <button type="submit" class="btn-generate" id="submitBtn">
-                    <span class="btn-text">✨ Generate Recipe</span>
-                    <span class="btn-loading" style="display:none;">⏳ Finding...</span>
-                </button>
-            </div>
+  <!-- ── INPUT CARD ── -->
+  <div class="card">
+    <div class="card-title">INGREDIENT INPUT MODULE</div>
+    <div class="card-heading">What ingredients do you have?</div>
+    <p class="card-sub">Enter ingredients separated by commas — e.g. <em>paneer, spinach</em> or <em>chicken, ginger, cumin</em></p>
 
-            <div class="chips">
-                <span class="chip-label">Try:</span>
-                <button type="button" class="chip" onclick="setInput('paneer, spinach')">paneer, spinach</button>
-                <button type="button" class="chip" onclick="setInput('chicken, ginger, cumin')">chicken, ginger, cumin</button>
-                <button type="button" class="chip" onclick="setInput('tomato, garlic, onion')">tomato, garlic, onion</button>
-                <button type="button" class="chip" onclick="setInput('dal, turmeric, coriander')">dal, turmeric, coriander</button>
-                <button type="button" class="chip" onclick="setInput('rice, coconut, mustard')">rice, coconut, mustard</button>
-                <button type="button" class="chip" onclick="setInput('potato, cumin, coriander')">potato, cumin, coriander</button>
-            </div>
-        </form>
+    <div id="loadingBar" class="loading-bar"></div>
 
-        {% if error %}
-        <div class="alert alert-error">⚠️ {{ error }}</div>
-        {% endif %}
-    </section>
+    <form action="/generate_recipe" method="POST" id="recipeForm">
+      <div class="input-group">
+        <input
+          type="text"
+          name="user_input"
+          id="userInput"
+          class="text-input"
+          placeholder="e.g. paneer, spinach"
+          value="{{ user_input if user_input else '' }}"
+          required autocomplete="off"
+        />
+        <button type="submit" class="btn-generate" id="submitBtn">
+          <span class="btn-text">⚡ GENERATE</span>
+          <span class="btn-loading" style="display:none;">⏳ SCANNING...</span>
+        </button>
+      </div>
 
-    <!-- Result Card -->
-    {% if recipe %}
-    <section class="card result-card">
+      <div class="chips">
+        <span class="chip-label">TRY:</span>
+        <button type="button" class="chip" onclick="setInput('paneer, spinach')">paneer, spinach</button>
+        <button type="button" class="chip" onclick="setInput('chicken, ginger, cumin')">chicken, ginger, cumin</button>
+        <button type="button" class="chip" onclick="setInput('tomato, garlic, onion')">tomato, garlic, onion</button>
+        <button type="button" class="chip" onclick="setInput('dal, turmeric, coriander')">dal, turmeric, coriander</button>
+        <button type="button" class="chip" onclick="setInput('rice, coconut, mustard')">rice, coconut, mustard</button>
+        <button type="button" class="chip" onclick="setInput('potato, cumin, coriander')">potato, cumin, coriander</button>
+      </div>
+    </form>
 
-        <!-- Recipe Name Banner -->
-        <div class="match-banner">
-            <span class="match-icon">🎯</span>
-            <div>
-                <div class="match-label">Best matching recipe found</div>
-                <div class="match-name">{{ recipe.name }}</div>
-            </div>
-        </div>
+    {% if error %}
+    <div class="alert">⚠ {{ error }}</div>
+    {% endif %}
+  </div>
 
-        <!-- Meta Info Row -->
-        <div class="meta-row">
-            {% if recipe.cuisine %}<span class="meta-tag">🍽️ {{ recipe.cuisine }}</span>{% endif %}
-            {% if recipe.course %}<span class="meta-tag">📋 {{ recipe.course }}</span>{% endif %}
-            {% if recipe.diet %}<span class="meta-tag">🌿 {{ recipe.diet }}</span>{% endif %}
-            {% if recipe.prep_time %}<span class="meta-tag">⏱️ Prep: {{ recipe.prep_time }} min</span>{% endif %}
-            {% if recipe.cook_time %}<span class="meta-tag">🔥 Cook: {{ recipe.cook_time }} min</span>{% endif %}
-            {% if recipe.servings %}<span class="meta-tag">👥 Serves: {{ recipe.servings }}</span>{% endif %}
-        </div>
+  <!-- ── RESULT CARD ── -->
+  {% if recipe %}
+  <div class="card result-card" id="resultCard">
+    <div class="scan-line"></div>
 
-        <!-- Detected Ingredients -->
-        {% if ingredients %}
-        <div class="ingredients-row">
-            <span class="ing-label">Your ingredients:</span>
-            {% for ing in ingredients %}
-            <span class="ing-tag">{{ ing }}</span>
-            {% endfor %}
-        </div>
-        {% endif %}
+    <!-- Match banner -->
+    <div class="match-banner">
+      <div class="match-icon-wrap">🎯</div>
+      <div>
+        <div class="match-label">▸ BEST MATCH DETECTED</div>
+        <div class="match-name">{{ recipe.name }}</div>
+      </div>
+    </div>
 
-        <!-- Full Ingredients List -->
-        <div class="section-block">
-            <div class="section-heading">📝 Ingredients Needed</div>
-            <div class="ingredients-grid">
-                {% for ing in recipe.ingredients %}
-                <div class="ing-item">
-                    <span class="ing-dot">•</span>
-                    <span>{{ ing }}</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+    <!-- Meta tags -->
+    <div class="meta-row">
+      {% if recipe.cuisine %}<div class="meta-tag"><span>🍽️</span>{{ recipe.cuisine }}</div>{% endif %}
+      {% if recipe.course %}<div class="meta-tag"><span>📋</span>{{ recipe.course }}</div>{% endif %}
+      {% if recipe.diet %}<div class="meta-tag"><span>🌿</span>{{ recipe.diet }}</div>{% endif %}
+      {% if recipe.prep_time %}<div class="meta-tag"><span>⏱️</span>Prep: {{ recipe.prep_time }} min</div>{% endif %}
+      {% if recipe.cook_time %}<div class="meta-tag"><span>🔥</span>Cook: {{ recipe.cook_time }} min</div>{% endif %}
+      {% if recipe.servings %}<div class="meta-tag"><span>👥</span>Serves: {{ recipe.servings }}</div>{% endif %}
+    </div>
 
-        <!-- Instructions -->
-        <div class="section-block">
-            <div class="result-header">
-                <div class="section-heading">👨‍🍳 Cooking Instructions</div>
-                <button class="btn-copy" onclick="copyRecipe()">📋 Copy All</button>
-            </div>
-            <div class="recipe-text" id="recipeText">{{ recipe.instructions }}</div>
-        </div>
-
-        <!-- AI Tip -->
-        {% if tip %}
-        <div class="tip-block">
-            <div class="tip-label">🤖 AI Chef's Tip</div>
-            <div class="tip-text">{{ tip }}</div>
-        </div>
-        {% endif %}
-
-    </section>
+    <!-- Detected ingredients -->
+    {% if ingredients %}
+    <div class="ing-detected">
+      <span class="ing-label-small">INPUT DETECTED →</span>
+      {% for ing in ingredients %}
+      <span class="ing-tag">{{ ing }}</span>
+      {% endfor %}
+    </div>
     {% endif %}
 
-</main>
+    <!-- Ingredients needed -->
+    <div class="sec-block">
+      <div class="sec-head">
+        <div class="sec-title">INGREDIENTS REQUIRED</div>
+      </div>
+      <div class="ing-grid">
+        {% for ing in recipe.ingredients %}
+        <div class="ing-item">
+          <div class="ing-bullet"></div>
+          <span>{{ ing }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
 
-<footer class="footer">
-    <p>Built with Flask + TensorFlow · 6,000+ Indian Recipes Dataset</p>
-</footer>
+    <!-- Instructions -->
+    <div class="sec-block">
+      <div class="sec-head">
+        <div class="sec-title">COOKING INSTRUCTIONS</div>
+        <button class="btn-copy" onclick="copyRecipe()">⎘ COPY</button>
+      </div>
+      <div class="instr-box" id="recipeText">{{ recipe.instructions }}</div>
+    </div>
+
+    <!-- AI Tip -->
+    {% if tip %}
+    <div class="tip-block">
+      <div class="tip-head">🤖 AI NEURAL TIP</div>
+      <div class="tip-text">{{ tip }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  BUILT WITH FLASK + TENSORFLOW · BIDIRECTIONAL LSTM · 6,870 INDIAN RECIPES DATASET
+</div>
 
 <script>
-    function setInput(text) {
-        document.getElementById('userInput').value = text;
-        document.getElementById('userInput').focus();
-    }
+function setInput(text){
+  document.getElementById('userInput').value=text;
+  document.getElementById('userInput').focus();
+}
 
-    function copyRecipe() {
-        const name = document.querySelector('.match-name')?.innerText || '';
-        const instructions = document.getElementById('recipeText')?.innerText || '';
-        const text = `${name}\n\n${instructions}`;
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.querySelector('.btn-copy');
-            btn.textContent = '✅ Copied!';
-            setTimeout(() => btn.textContent = '📋 Copy All', 2000);
-        });
-    }
+function copyRecipe(){
+  const name=document.querySelector('.match-name')?.innerText||'';
+  const text=document.getElementById('recipeText')?.innerText||'';
+  navigator.clipboard.writeText(name+'\n\n'+text).then(()=>{
+    const btn=document.querySelector('.btn-copy');
+    btn.textContent='✓ COPIED';
+    setTimeout(()=>btn.textContent='⎘ COPY',2000);
+  });
+}
 
-    document.getElementById('recipeForm').addEventListener('submit', function () {
-        const btn = document.getElementById('submitBtn');
-        btn.querySelector('.btn-text').style.display = 'none';
-        btn.querySelector('.btn-loading').style.display = 'inline';
-        btn.disabled = true;
-    });
+document.getElementById('recipeForm').addEventListener('submit',function(){
+  const btn=document.getElementById('submitBtn');
+  btn.querySelector('.btn-text').style.display='none';
+  btn.querySelector('.btn-loading').style.display='inline';
+  btn.disabled=true;
+  document.getElementById('loadingBar').classList.add('active');
+});
 
-    const result = document.querySelector('.result-card');
-    if (result) result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+const result=document.getElementById('resultCard');
+if(result) result.scrollIntoView({behavior:'smooth',block:'start'});
 </script>
 </body>
 </html>
